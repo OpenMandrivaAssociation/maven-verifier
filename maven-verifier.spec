@@ -14,8 +14,9 @@ BuildArch:      noarch
 
 BuildRequires:  java-devel
 BuildRequires:  maven-local
-BuildRequires:  maven-surefire-provider-junit
-BuildRequires:  maven-shared-utils
+BuildRequires:  mvn(junit:junit)
+BuildRequires:  mvn(org.apache.maven.shared:maven-shared-components:pom:)
+BuildRequires:  mvn(org.apache.maven.shared:maven-shared-utils)
 
 Obsoletes:      maven-shared-verifier < %{version}-%{release}
 Provides:       maven-shared-verifier = %{version}-%{release}
