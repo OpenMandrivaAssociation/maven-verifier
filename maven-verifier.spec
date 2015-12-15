@@ -1,8 +1,9 @@
 %{?_javapackages_macros:%_javapackages_macros}
 Name:           maven-verifier
 Version:        1.4
-Release:        5.0%{?dist}
+Release:        5.1
 Summary:        Maven verifier
+Group:	Development/Java
 License:        ASL 2.0
 URL:            http://maven.apache.org/shared/maven-verifier
 Source0:        http://repo1.maven.org/maven2/org/apache/maven/shared/%{name}/%{version}/%{name}-%{version}-source-release.zip
