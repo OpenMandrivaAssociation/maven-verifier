@@ -1,7 +1,7 @@
 %{?_javapackages_macros:%_javapackages_macros}
 Name:           maven-verifier
 Version:        1.4
-Release:        5.1
+Release:        5.2
 Summary:        Maven verifier
 Group:	Development/Java
 License:        ASL 2.0
