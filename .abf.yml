@@ -1,2 +1,4 @@
 sources:
+  maven-verifier-2.0.0.tar.gz: 332d9bde18436900062dd0d426bbeaea102fd05a
+removed_sources:
   maven-verifier-1.4-source-release.zip: 23a7b6855d191dd2452b61a9631323d8cf12c3dd

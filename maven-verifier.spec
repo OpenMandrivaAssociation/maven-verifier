@@ -1,69 +1,82 @@
-%{?_javapackages_macros:%_javapackages_macros}
-Name:           maven-verifier
-Version:        1.4
-Release:        5.2
-Summary:        Maven verifier
-Group:	Development/Java
-License:        ASL 2.0
-URL:            https://maven.apache.org/shared/maven-verifier
-Source0:        http://repo1.maven.org/maven2/org/apache/maven/shared/%{name}/%{version}/%{name}-%{version}-source-release.zip
-# Forwarded upstream, see MSHARED-284
-Patch1:         0001-Update-to-maven-shared-utils-0.3.patch
+Name:		maven-verifier
+Version:	2.0.0
+Release:	1
+Summary:	Test harness that runs Maven
+Group:		Development/Java
+License:	Apache-2.0
+URL:		https://maven.apache.org/shared/maven-verifier/
+Source0:	https://github.com/apache/maven-verifier/archive/refs/tags/maven-verifier-%{version}.tar.gz#/maven-verifier-%{version}.tar.gz
+BuildArch:	noarch
+BuildRequires:	python
+# The maven RPM holds the class jars. maven-components owns the coordinates.
+BuildRequires:	maven
+BuildRequires:	maven-components >= 3.10.0
+BuildRequires:	java-current-devel
+BuildRequires:	mvn(org.apache.maven.shared:maven-shared-utils)
+BuildRequires:	maven-shared-utils >= 3.5.0
+Requires:	maven-shared-utils >= 3.5.0
+BuildRequires:	mvn(org.apache.maven:maven-settings-builder)
+BuildRequires:	mvn(org.apache.maven:maven-settings)
+# settings-builder's POM depends on this. The Maven RPM only bundles a copy.
+BuildRequires:	mvn(org.codehaus.plexus:plexus-sec-dispatcher)
+BuildRequires:	plexus-sec-dispatcher
+BuildRequires:	mvn(javax.inject:javax.inject)
+# javax.inject and jakarta-inject both provide this coordinate.
+BuildRequires:	javax.inject >= 1-2
+BuildSystem:	maven
+BuildOption(install):	--file-name %{name}
 
-BuildArch:      noarch
-
-BuildRequires:  java-devel
-BuildRequires:  maven-local
-BuildRequires:  mvn(junit:junit)
-BuildRequires:  mvn(org.apache.maven.shared:maven-shared-components:pom:)
-BuildRequires:  mvn(org.apache.maven.shared:maven-shared-utils)
-
-Obsoletes:      maven-shared-verifier < %{version}-%{release}
-Provides:       maven-shared-verifier = %{version}-%{release}
+Obsoletes:	maven-shared-verifier < %{EVRD}
+Provides:	maven-shared-verifier = %{EVRD}
+Obsoletes:	maven-verifier-javadoc < %{EVRD}
+Obsoletes:	maven-shared-verifier-javadoc < %{EVRD}
 
 %description
-Provides a test harness for Maven integration tests.
-
-This is a replacement package for maven-shared-verifier
-
-%package javadoc
-
-Summary:        Javadoc for %{name}
-    
-%description javadoc
-API documentation for %{name}.
-
+Forks or embeds Maven and checks the result of an integration test.
+2.0.0 reads settings through maven-settings-builder and uses
+maven-shared-utils 3.5. The sources do not use plexus-xml. Upstream
+marks this component deprecated in favor of maven-executor. Tests are
+not run.
 
 %prep
-%setup -q
-%patch1 -p1
+%autosetup -n maven-verifier-maven-verifier-%{version}
+rm -rf src/test .github
+python - <<'PY'
+import xml.etree.ElementTree as ET
+NS = "http://maven.apache.org/POM/4.0.0"
+ET.register_namespace("", NS)
 
-%build
-%mvn_build
+def tag(name):
+    return "{" + NS + "}" + name
 
-%install
-%mvn_install
+def add(parent, name, text):
+    node = ET.SubElement(parent, tag(name))
+    node.text = text
+    return node
+
+root = ET.Element(tag("project"))
+add(root, "modelVersion", "4.0.0")
+add(root, "groupId", "org.apache.maven.shared")
+add(root, "artifactId", "maven-verifier")
+add(root, "version", "%{version}")
+add(root, "name", "Apache Maven Verifier")
+props = ET.SubElement(root, tag("properties"))
+add(props, "maven.compiler.release", "8")
+add(props, "project.build.sourceEncoding", "UTF-8")
+deps = ET.SubElement(root, tag("dependencies"))
+for group, artifact, version, scope in (
+    ("org.apache.maven.shared", "maven-shared-utils", "3.5.0", ""),
+    ("org.apache.maven", "maven-settings-builder", "3.10.0", "provided"),
+    ("org.apache.maven", "maven-settings", "3.10.0", "provided"),
+):
+    dep = ET.SubElement(deps, tag("dependency"))
+    add(dep, "groupId", group)
+    add(dep, "artifactId", artifact)
+    add(dep, "version", version)
+    if scope:
+        add(dep, "scope", scope)
+ET.ElementTree(root).write("pom.xml", encoding="utf-8", xml_declaration=True)
+PY
 
 %files -f .mfiles
-%doc LICENSE NOTICE
-
-%files javadoc -f .mfiles-javadoc
-%doc LICENSE NOTICE
-
-
-%changelog
-* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4-5
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
-
-* Fri Apr 19 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 1.4-4
-- Update to maven-shared-utils 0.3
-
-* Fri Feb 08 2013 Tomas Radej <tradej@redhat.com> - 1.4-3
-- Building the new way
-
-* Thu Jan 24 2013 Tomas Radej <tradej@redhat.com> - 1.4-2
-- Added BuildRequires on maven-shared-utils
-
-* Wed Jan 16 2013 Tomas Radej <tradej@redhat.com> - 1.4-1
-- Initial version
-
+%doc LICENSE README.md MIGRATION.md
